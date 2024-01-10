@@ -9,9 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -22,21 +19,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: Get Latest Commit SHA
-        id: latest_commit
-        run: |
-          echo "::set-output name=sha::$(git rev-parse HEAD)"
-
-      - name: Get Latest Commit Tree SHA
-        id: latest_commit_tree
+      - name: Get Latest Commit Information
+        id: latest_commit_info
         run: |
           repo_fullname=$(basename -s .git $(git config --get remote.origin.url))
           commit_sha=$(git rev-parse HEAD)
-          tree_sha=$(curl -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_fullname/git/commits/$commit_sha" | jq -r '.tree.sha')
+          commit_info=$(curl -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_fullname/commits/$commit_sha")
+          tree_sha=$(echo "$commit_info" | jq -r '.commit.tree.sha')
+
           if [[ -z "$tree_sha" || ! $tree_sha =~ ^[0-9a-f]{40}$ ]]; then
             echo "Error: Invalid or missing tree SHA: $tree_sha"
             exit 1
           fi
+          
           echo "::set-output name=tree_sha::$tree_sha"
 
       - name: Run Daily Commit
@@ -59,8 +54,8 @@ jobs:
           commit_message = f"Daily commit - {current_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
 
           # Get the SHA of the latest commit and its tree
-          latest_commit_sha = "${{ steps.latest_commit.outputs.sha }}"
-          latest_commit_tree_sha = "${{ steps.latest_commit_tree.outputs.tree_sha }}"
+          latest_commit_sha = "$(git rev-parse HEAD)"
+          latest_commit_tree_sha = "${{ steps.latest_commit_info.outputs.tree_sha }}"
 
           # Check if tree SHA is valid
           if [[ -z "$latest_commit_tree_sha" || ! $latest_commit_tree_sha =~ ^[0-9a-f]{40}$ ]]; then
