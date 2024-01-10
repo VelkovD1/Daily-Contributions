@@ -32,11 +32,20 @@ jobs:
           commit_info=$(curl -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_name/commits/$commit_sha")
           echo "DEBUG: Commit Info: $commit_info"
           
+          # Print the HTTP response code
+          http_response_code=$(echo "$commit_info" | jq -r '.code')
+          echo "DEBUG: HTTP Response Code: $http_response_code"
+          
           tree_sha=$(echo "$commit_info" | jq -r '.commit.tree.sha')
           echo "DEBUG: Tree SHA: $tree_sha"
           
           # Print the full response from the GitHub API
           echo "DEBUG: GitHub API Response: $commit_info"
+          
+          if [[ "$http_response_code" -ne 200 ]]; then
+            echo "Error: GitHub API request failed with HTTP response code $http_response_code"
+            exit 1
+          fi
           
           if [[ -z "$tree_sha" || ! $tree_sha =~ ^[0-9a-f]{40}$ ]]; then
             echo "Error: Invalid or missing tree SHA: $tree_sha"
