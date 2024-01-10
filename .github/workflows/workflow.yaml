@@ -22,12 +22,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
+      - name: Get Latest Commit SHA
+        id: latest_commit
+        run: |
+          echo "::set-output name=sha::$(git rev-parse HEAD)"
+
       - name: Run Daily Commit
         run: |
           python - <<EOF
           import requests
           from datetime import datetime
-  
+
           # Your GitHub username and repository
           username = "${{ secrets.USERNAME }}"
           repo_name = "${{ secrets.REPO_NAME }}"
@@ -41,25 +46,18 @@ jobs:
           # Commit message
           commit_message = f"Daily commit - {current_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
 
+          # Get the SHA of the latest commit
+          latest_commit_sha = "${{ steps.latest_commit.outputs.sha }}"
+
           # Data for the commit
           commit_data = {
               "message": commit_message,
-              "author": {
-                  "name": username,
-                  "email": f"{username}@users.noreply.github.com"
-              },
-              "committer": {
-                  "name": username,
-                  "email": f"{username}@users.noreply.github.com"
-              },
-              "tree": {},
-              "parents": []
+              "tree": latest_commit_sha,  # Use the SHA of the latest commit as the tree
+              "parents": [latest_commit_sha]
           }
 
           # Convert data to JSON
           commit_data_json = {
-              "author": commit_data["author"],
-              "committer": commit_data["committer"],
               "message": commit_data["message"],
               "tree": commit_data["tree"],
               "parents": commit_data["parents"]
@@ -72,4 +70,6 @@ jobs:
           print(response.text)
           EOF
         env:
+          USERNAME: ${{ secrets.USERNAME }}
+          REPO_NAME: ${{ secrets.REPO_NAME }}
           PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
