@@ -1,0 +1,73 @@
+name: Daily Commit
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs every day at midnight UTC
+
+jobs:
+  daily-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Run Daily Commit
+        run: |
+          python - <<EOF
+          import requests
+          from datetime import datetime
+
+          # Your GitHub username, repository, and personal access token
+          username = "your_username"
+          repo_name = "your_repository"
+          token = "${{ secrets.GITHUB_TOKEN }}"
+
+          # GitHub API endpoint for creating a commit
+          commit_url = f"https://api.github.com/repos/{username}/{repo_name}/git/commits"
+
+          # Current date and time
+          current_datetime = datetime.now()
+
+          # Commit message
+          commit_message = f"Daily commit - {current_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
+
+          # Data for the commit
+          commit_data = {
+              "message": commit_message,
+              "author": {
+                  "name": username,
+                  "email": f"{username}@users.noreply.github.com"
+              },
+              "committer": {
+                  "name": username,
+                  "email": f"{username}@users.noreply.github.com"
+              },
+              "tree": {},
+              "parents": []
+          }
+
+          # Convert data to JSON
+          commit_data_json = {
+              "author": commit_data["author"],
+              "committer": commit_data["committer"],
+              "message": commit_data["message"],
+              "tree": commit_data["tree"],
+              "parents": commit_data["parents"]
+          }
+
+          # Make the API request to create the commit
+          response = requests.post(commit_url, json=commit_data_json, headers={"Authorization": f"token {token}"})
+
+          # Print the response
+          print(response.text)
+          EOF
+        env:
+          USERNAME: ${{ secrets.USERNAME }}
+          REPO_NAME: ${{ secrets.REPO_NAME }}
+          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
