@@ -35,6 +35,9 @@ jobs:
           tree_sha=$(echo "$commit_info" | jq -r '.commit.tree.sha')
           echo "DEBUG: Tree SHA: $tree_sha"
           
+          # Print the full response from the GitHub API
+          echo "DEBUG: GitHub API Response: $commit_info"
+          
           if [[ -z "$tree_sha" || ! $tree_sha =~ ^[0-9a-f]{40}$ ]]; then
             echo "Error: Invalid or missing tree SHA: $tree_sha"
             exit 1
@@ -91,7 +94,7 @@ jobs:
           # Make the API request to create the commit
           response = requests.post(commit_url, json=commit_data_json, headers={"Authorization": f"token ${{ secrets.PERSONAL_ACCESS_TOKEN }}"})
 
-          # Print the HTTP response
+          # Print the response
           print(response.text)
           EOF
         env:
