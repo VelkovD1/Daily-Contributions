@@ -68,6 +68,6 @@ jobs:
           print(response.text)
           EOF
         env:
-          USERNAME: ${{ secrets.USERNAME }}
-          REPO_NAME: ${{ secrets.REPO_NAME }}
+          USERNAME: ${{ secrets.VelkovD1 }}
+          REPO_NAME: ${{ secrets.Daily-Contributions }}
           TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
