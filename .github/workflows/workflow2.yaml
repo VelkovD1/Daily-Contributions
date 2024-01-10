@@ -2,7 +2,7 @@ name: Daily Commit
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # Runs 5 min
+    - cron: '*/5 * * * *'  # Runs every 5 minutes
 
 jobs:
   daily-commit:
@@ -23,10 +23,9 @@ jobs:
           import requests
           from datetime import datetime
 
-          # Your GitHub username, repository, and personal access token
+          # Your GitHub username and repository
           username = "your_username"
           repo_name = "your_repository"
-          token = "${{ secrets.GITHUB_TOKEN }}"
 
           # GitHub API endpoint for creating a commit
           commit_url = f"https://api.github.com/repos/{username}/{repo_name}/git/commits"
@@ -62,12 +61,11 @@ jobs:
           }
 
           # Make the API request to create the commit
-          response = requests.post(commit_url, json=commit_data_json, headers={"Authorization": f"token {token}"})
+          response = requests.post(commit_url, json=commit_data_json, headers={"Authorization": f"token ${{ secrets.PERSONAL_ACCESS_TOKEN }}"})
 
           # Print the response
           print(response.text)
           EOF
         env:
-          USERNAME: ${{ secrets.VelkovD1 }}
-          REPO_NAME: ${{ secrets.Daily-Contributions }}
-          TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          USERNAME: ${{ secrets.USERNAME }}
+          REPO_NAME: ${{ secrets.REPO_NAME }}
