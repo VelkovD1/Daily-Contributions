@@ -2,7 +2,7 @@ name: Daily Contributions
 
 on:
   schedule:
-    - cron: '37 19 * * *'
+    - cron: '*/5 * * * *'
 
 jobs:
   make-contribution:
