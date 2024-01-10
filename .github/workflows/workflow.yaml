@@ -27,6 +27,14 @@ jobs:
         run: |
           echo "::set-output name=sha::$(git rev-parse HEAD)"
 
+      - name: Get Latest Commit Tree SHA
+        id: latest_commit_tree
+        run: |
+          repo_fullname=$(basename -s .git $(git config --get remote.origin.url))
+          commit_sha=$(git rev-parse HEAD)
+          tree_sha=$(curl -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_fullname/git/commits/$commit_sha" | jq -r '.tree.sha')
+          echo "::set-output name=tree_sha::$tree_sha"
+
       - name: Run Daily Commit
         run: |
           python - <<EOF
@@ -46,13 +54,14 @@ jobs:
           # Commit message
           commit_message = f"Daily commit - {current_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
 
-          # Get the SHA of the latest commit
+          # Get the SHA of the latest commit and its tree
           latest_commit_sha = "${{ steps.latest_commit.outputs.sha }}"
+          latest_commit_tree_sha = "${{ steps.latest_commit_tree.outputs.tree_sha }}"
 
           # Data for the commit
           commit_data = {
               "message": commit_message,
-              "tree": latest_commit_sha,  # Use the SHA of the latest commit as the tree
+              "tree": latest_commit_tree_sha,
               "parents": [latest_commit_sha]
           }
 
