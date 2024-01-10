@@ -27,10 +27,10 @@ jobs:
           python - <<EOF
           import requests
           from datetime import datetime
-
+  
           # Your GitHub username and repository
-          username = "your_username"
-          repo_name = "your_repository"
+          username = "${{ secrets.USERNAME }}"
+          repo_name = "${{ secrets.REPO_NAME }}"
 
           # GitHub API endpoint for creating a commit
           commit_url = f"https://api.github.com/repos/{username}/{repo_name}/git/commits"
@@ -72,5 +72,4 @@ jobs:
           print(response.text)
           EOF
         env:
-          USERNAME: ${{ secrets.VelkovD1 }}
-          REPO_NAME: ${{ secrets.Daily-Contributions }}
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
