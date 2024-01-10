@@ -19,24 +19,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests jq
 
-      - name: Get Latest Commit Information
-        id: latest_commit_info
+      - name: Debug Information
         run: |
           repo_url=$(git config --get remote.origin.url)
           repo_name=$(basename -s .git $repo_url)
           commit_sha=$(git rev-parse HEAD)
+          
           echo "DEBUG: Repo URL: $repo_url"
           echo "DEBUG: Repo Name: $repo_name"
           echo "DEBUG: Commit SHA: $commit_sha"
           
           commit_info=$(curl -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_name/commits/$commit_sha")
+          echo "DEBUG: Commit Info: $commit_info"
+          
           tree_sha=$(echo "$commit_info" | jq -r '.commit.tree.sha')
-
+          echo "DEBUG: Tree SHA: $tree_sha"
+          
           if [[ -z "$tree_sha" || ! $tree_sha =~ ^[0-9a-f]{40}$ ]]; then
             echo "Error: Invalid or missing tree SHA: $tree_sha"
             exit 1
           fi
-
+          
           echo "::set-output name=tree_sha::$tree_sha"
 
       - name: Run Daily Commit
