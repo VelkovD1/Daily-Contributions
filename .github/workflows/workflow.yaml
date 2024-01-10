@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests jq
+          pip install requests
 
       - name: Debug Information
         run: |
@@ -29,18 +29,15 @@ jobs:
           echo "DEBUG: Repo Name: $repo_name"
           echo "DEBUG: Commit SHA: $commit_sha"
           
-          commit_info=$(curl -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_name/commits/$commit_sha")
-          echo "DEBUG: Commit Info: $commit_info"
+          commit_info=$(curl -i -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_name/commits/$commit_sha")
+          http_response_code=$(echo "$commit_info" | grep -i "^HTTP" | awk '{print $2}')
+          commit_info_body=$(echo "$commit_info" | sed -n '/^\s*$/,/^$/p' | sed '1d;$d')
           
-          # Print the HTTP response code
-          http_response_code=$(echo "$commit_info" | jq -r '.code')
           echo "DEBUG: HTTP Response Code: $http_response_code"
+          echo "DEBUG: Commit Info: $commit_info_body"
           
-          tree_sha=$(echo "$commit_info" | jq -r '.commit.tree.sha')
+          tree_sha=$(echo "$commit_info_body" | jq -r '.commit.tree.sha')
           echo "DEBUG: Tree SHA: $tree_sha"
-          
-          # Print the full response from the GitHub API
-          echo "DEBUG: GitHub API Response: $commit_info"
           
           if [[ "$http_response_code" -ne 200 ]]; then
             echo "Error: GitHub API request failed with HTTP response code $http_response_code"
