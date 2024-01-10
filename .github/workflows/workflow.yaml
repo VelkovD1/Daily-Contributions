@@ -91,7 +91,7 @@ jobs:
           # Make the API request to create the commit
           response = requests.post(commit_url, json=commit_data_json, headers={"Authorization": f"token ${{ secrets.PERSONAL_ACCESS_TOKEN }}"})
 
-          # Print the response
+          # Print the HTTP response
           print(response.text)
           EOF
         env:
