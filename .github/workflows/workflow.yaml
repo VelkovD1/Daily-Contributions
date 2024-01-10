@@ -33,8 +33,8 @@ jobs:
           repo_fullname=$(basename -s .git $(git config --get remote.origin.url))
           commit_sha=$(git rev-parse HEAD)
           tree_sha=$(curl -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_fullname/git/commits/$commit_sha" | jq -r '.tree.sha')
-          if [[ ! $tree_sha =~ ^[0-9a-f]{40}$ ]]; then
-            echo "Error: Invalid tree SHA: $tree_sha"
+          if [[ -z "$tree_sha" || ! $tree_sha =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Error: Invalid or missing tree SHA: $tree_sha"
             exit 1
           fi
           echo "::set-output name=tree_sha::$tree_sha"
@@ -61,6 +61,12 @@ jobs:
           # Get the SHA of the latest commit and its tree
           latest_commit_sha = "${{ steps.latest_commit.outputs.sha }}"
           latest_commit_tree_sha = "${{ steps.latest_commit_tree.outputs.tree_sha }}"
+
+          # Check if tree SHA is valid
+          if [[ -z "$latest_commit_tree_sha" || ! $latest_commit_tree_sha =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Error: Invalid or missing tree SHA: $latest_commit_tree_sha"
+            exit 1
+          fi
 
           # Data for the commit
           commit_data = {
