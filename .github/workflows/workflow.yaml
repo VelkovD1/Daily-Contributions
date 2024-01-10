@@ -33,6 +33,10 @@ jobs:
           repo_fullname=$(basename -s .git $(git config --get remote.origin.url))
           commit_sha=$(git rev-parse HEAD)
           tree_sha=$(curl -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_fullname/git/commits/$commit_sha" | jq -r '.tree.sha')
+          if [[ ! $tree_sha =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Error: Invalid tree SHA: $tree_sha"
+            exit 1
+          fi
           echo "::set-output name=tree_sha::$tree_sha"
 
       - name: Run Daily Commit
