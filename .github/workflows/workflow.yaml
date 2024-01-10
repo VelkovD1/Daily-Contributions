@@ -25,6 +25,10 @@ jobs:
           repo_url=$(git config --get remote.origin.url)
           repo_name=$(basename -s .git $repo_url)
           commit_sha=$(git rev-parse HEAD)
+          echo "DEBUG: Repo URL: $repo_url"
+          echo "DEBUG: Repo Name: $repo_name"
+          echo "DEBUG: Commit SHA: $commit_sha"
+          
           commit_info=$(curl -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_name/commits/$commit_sha")
           tree_sha=$(echo "$commit_info" | jq -r '.commit.tree.sha')
 
@@ -57,6 +61,9 @@ jobs:
           # Get the SHA of the latest commit and its tree
           latest_commit_sha = "$(git rev-parse HEAD)"
           latest_commit_tree_sha = "${{ steps.latest_commit_info.outputs.tree_sha }}"
+
+          echo "DEBUG: Latest Commit SHA: $latest_commit_sha"
+          echo "DEBUG: Latest Commit Tree SHA: $latest_commit_tree_sha"
 
           # Check if tree SHA is valid
           if [[ -z "$latest_commit_tree_sha" || ! $latest_commit_tree_sha =~ ^[0-9a-f]{40}$ ]]; then
