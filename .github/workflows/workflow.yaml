@@ -30,7 +30,11 @@ jobs:
           echo "DEBUG: Commit SHA: $commit_sha"
           
           commit_info=$(curl -i -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_name/commits/$commit_sha")
-          http_response_code=$(echo "$commit_info" | grep -i "^HTTP" | awk '{print $2}')
+          
+          # Extract HTTP response code separately
+          http_response_code=$(echo "$commit_info" | awk '/^HTTP/ {print $2}')
+          
+          # Extract commit information (excluding headers)
           commit_info_body=$(echo "$commit_info" | sed -n '/^\s*$/,/^$/p' | sed '1d;$d')
           
           echo "DEBUG: HTTP Response Code: $http_response_code"
