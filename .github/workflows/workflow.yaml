@@ -1,111 +1,35 @@
-name: Daily Commit
+name: Update README
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'  # Runs every 5 minutes
+    - cron: "*/5 * * * *" # Runs every 5 minutes
 
 jobs:
-  daily-commit:
+  update-readme:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
+    # Step 1: Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests
+    # Step 2: Update README file
+    - name: Update README
+      run: |
+        echo "## Updated on $(date)" >> README.md
 
-      - name: Debug Information
-        run: |
-          repo_url=$(git config --get remote.origin.url)
-          repo_name=$(basename -s .git $repo_url)
-          commit_sha=$(git rev-parse HEAD)
-          
-          echo "DEBUG: Repo URL: $repo_url"
-          echo "DEBUG: Repo Name: $repo_name"
-          echo "DEBUG: Commit SHA: $commit_sha"
-          
-          commit_info=$(curl -i -s -H "Authorization: token ${{ secrets.PERSONAL_ACCESS_TOKEN }}" "https://api.github.com/repos/$repo_name/commits/$commit_sha")
-          
-          # Extract HTTP response code separately
-          http_response_code=$(echo "$commit_info" | awk '/^HTTP/ {print $2}')
-          
-          # Extract commit information (excluding headers)
-          commit_info_body=$(echo "$commit_info" | sed -n '/^\s*$/,/^$/p' | sed '1d;$d')
-          
-          echo "DEBUG: HTTP Response Code: $http_response_code"
-          echo "DEBUG: Commit Info: $commit_info_body"
-          
-          tree_sha=$(echo "$commit_info_body" | jq -r '.commit.tree.sha')
-          echo "DEBUG: Tree SHA: $tree_sha"
-          
-          if [[ "$http_response_code" -ne 200 ]]; then
-            echo "Error: GitHub API request failed with HTTP response code $http_response_code"
-            exit 1
-          fi
-          
-          if [[ -z "$tree_sha" || ! $tree_sha =~ ^[0-9a-f]{40}$ ]]; then
-            echo "Error: Invalid or missing tree SHA: $tree_sha"
-            exit 1
-          fi
-          
-          echo "::set-output name=tree_sha::$tree_sha"
+    # Step 3: Configure Git
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Run Daily Commit
-        run: |
-          python - <<EOF
-          import requests
-          from datetime import datetime
-
-          # Your GitHub username and repository
-          username = "${{ secrets.USERNAME }}"
-          repo_name = "${{ github.repository }}"
-          
-          # GitHub API endpoint for creating a commit
-          commit_url = f"https://api.github.com/repos/{username}/{repo_name}/git/commits"
-
-          # Current date and time
-          current_datetime = datetime.now()
-
-          # Commit message
-          commit_message = f"Daily commit - {current_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
-
-          # Get the SHA of the latest commit and its tree
-          latest_commit_sha = "$(git rev-parse HEAD)"
-          latest_commit_tree_sha = "${{ steps.latest_commit_info.outputs.tree_sha }}"
-
-          echo "DEBUG: Latest Commit SHA: $latest_commit_sha"
-          echo "DEBUG: Latest Commit Tree SHA: $latest_commit_tree_sha"
-
-          # Check if tree SHA is valid
-          if [[ -z "$latest_commit_tree_sha" || ! $latest_commit_tree_sha =~ ^[0-9a-f]{40}$ ]]; then
-            echo "Error: Invalid or missing tree SHA: $latest_commit_tree_sha"
-            exit 1
-          fi
-
-          # Data for the commit
-          commit_data = {
-              "message": commit_message,
-              "tree": latest_commit_tree_sha,
-              "parents": [latest_commit_sha]
-          }
-
-          # Convert data to JSON
-          commit_data_json = {
-              "message": commit_data["message"],
-              "tree": commit_data["tree"],
-              "parents": commit_data["parents"]
-          }
-
-          # Make the API request to create the commit
-          response = requests.post(commit_url, json=commit_data_json, headers={"Authorization": f"token ${{ secrets.PERSONAL_ACCESS_TOKEN }}"})
-
-          # Print the response
-          print(response.text)
-          EOF
-        env:
-          USERNAME: ${{ secrets.USERNAME }}
+    # Step 4: Commit and push changes
+    - name: Commit and push changes
+      env:
+        GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      run: |
+        git add README.md
+        git commit -m "Automated update to README"
+        git push https://${GH_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
